@@ -1,0 +1,2 @@
+rules:
+    - Superscript\PHPStanRules\Rules\StrictComparisonOfObjectsRule
