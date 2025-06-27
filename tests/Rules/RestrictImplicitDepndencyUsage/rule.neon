@@ -1,0 +1,4 @@
+services:
+    - class: Superscript\PHPStanRules\Rules\RestrictImplicitDependencyUsage
+      tags:
+        - phpstan.restrictedClassNameUsageExtension

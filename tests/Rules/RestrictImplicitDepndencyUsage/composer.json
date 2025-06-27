@@ -1,0 +1,10 @@
+{
+    "name": "vendor/package",
+    "require": {
+        "php": "^8.3",
+        "myclabs/deep-copy": "^1.13"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1"
+    }
+}

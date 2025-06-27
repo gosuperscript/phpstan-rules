@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Superscript\PHPStanRules\Rules;
 
-use Composer\InstalledVersions;
 use PHPStan\Analyser\ResultCache\ResultCacheMetaExtension;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
