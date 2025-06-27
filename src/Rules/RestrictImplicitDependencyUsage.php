@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Superscript\PHPStanRules\Rules;
 
+use Composer\InstalledVersions;
 use PHPStan\Analyser\ResultCache\ResultCacheMetaExtension;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
@@ -24,6 +25,7 @@ use function Psl\Json\decode;
 use function Psl\Vec\flat_map;
 use function Psl\Vec\keys;
 use function Psl\Vec\map;
+use function Superscript\PHPStanRules\basepath;
 
 /**
  * @phpstan-type InstalledJson array{packages: list<array{name: string, autoload?: array{psr-4?: array<string, string|list<string>>}, replace?: array<string, string>}>}
@@ -230,7 +232,7 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
                 ], allow_unknown_fields: true)),
                 'replace' => Type\optional(Type\dict(Type\string(), Type\string())),
             ], allow_unknown_fields: true)),
-        ], allow_unknown_fields: true)->assert(decode(read(__DIR__ . '/../../vendor/composer/installed.json')));
+        ], allow_unknown_fields: true)->assert(decode(read(basepath() . '/vendor/composer/installed.json')));
     }
 
     /**

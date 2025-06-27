@@ -5,7 +5,10 @@
     "autoload": {
         "psr-4": {
             "Superscript\\PHPStanRules\\": "src/"
-        }
+        },
+        "files": [
+            "src/basepath.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
