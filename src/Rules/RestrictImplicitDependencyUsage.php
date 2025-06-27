@@ -140,6 +140,11 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
         $packages = filter($this->getInstalledPackagesWithNamespaces(), fn(array $namespaces) => any($namespaces, fn(string $namespace) => str_starts_with($class, $namespace)));
         $packages = sort_by($packages, fn(array $namespaces) => $namespaces ? -max(map($namespaces, fn(string $namespace) => substr_count($namespace, '\\'))) : 0);
 
+        // Remove laravel/framework if there is a more specific package.
+        if (count($packages) > 1 && array_key_exists('laravel/framework', $packages)) {
+            unset($packages['laravel/framework']);
+        }
+
         return first_key($packages);
     }
 
