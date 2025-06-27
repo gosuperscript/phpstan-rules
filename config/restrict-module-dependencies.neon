@@ -1,0 +1,9 @@
+services:
+	-
+		class: Superscript\PHPStanRules\Rules\RestrictImplicitDependencyUsage
+		tags:
+			- phpstan.restrictedClassNameUsageExtension
+	-
+		class: Superscript\PHPStanRules\Rules\RestrictImplicitDependencyUsage
+		tags:
+			- phpstan.resultCacheMetaExtension

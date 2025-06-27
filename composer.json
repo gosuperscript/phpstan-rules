@@ -17,9 +17,17 @@
     },
     "require": {
         "php": "^8.3",
-        "phpstan/phpstan": "^2.0"
+        "phpstan/phpstan": "^2.1",
+        "azjezz/psl": "^3.3"
     },
     "require-dev": {
-        "phpunit/phpunit": "^12.1"
+        "phpunit/phpunit": "^12.1",
+        "phpstan/extension-installer": "^1.4",
+        "php-standard-library/phpstan-extension": "^2.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
     }
 }
