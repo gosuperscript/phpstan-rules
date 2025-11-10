@@ -122,7 +122,9 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
 
     private function findModuleRoot(string $file): string
     {
-        $dir = dirname($file);
+        // Start from the file's directory, or the path itself if it's already a directory
+        $dir = is_dir($file) ? $file : dirname($file);
+        
         while ($dir !== '/') {
             if (file_exists($dir . '/composer.json')) {
                 return $dir;
