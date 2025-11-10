@@ -268,7 +268,16 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
     private function getInstalledJson(): array
     {
         $moduleRoot = $this->currentModuleRoot ?? basepath() ?? getcwd();
-        return $this->installedJsonCache[$moduleRoot] ??= Type\shape([
+        
+        // If module doesn't have its own vendor directory, use the main project's
+        $vendorRoot = $moduleRoot;
+        if (!file_exists($vendorRoot . '/vendor/composer/installed.json')) {
+            $vendorRoot = basepath() ?? getcwd();
+        }
+        
+        // Cache using module root as key, but read from vendorRoot
+        $cacheKey = $moduleRoot . '|' . $vendorRoot;
+        return $this->installedJsonCache[$cacheKey] ??= Type\shape([
             'packages' => Type\vec(Type\shape([
                 'name' => Type\string(),
                 'autoload' => Type\optional(Type\shape([
@@ -276,7 +285,7 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
                 ], allow_unknown_fields: true)),
                 'replace' => Type\optional(Type\dict(Type\string(), Type\string())),
             ], allow_unknown_fields: true)),
-        ], allow_unknown_fields: true)->assert(decode(read($moduleRoot . '/vendor/composer/installed.json')));
+        ], allow_unknown_fields: true)->assert(decode(read($vendorRoot . '/vendor/composer/installed.json')));
     }
 
     /**
