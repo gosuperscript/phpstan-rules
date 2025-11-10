@@ -70,24 +70,26 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
     ];
 
     /**
-     * @var ComposerJson
+     * @var array<string, ComposerJson>
      */
-    private array $composerJson;
+    private array $composerJsonCache = [];
 
     /**
-     * @var InstalledJson
+     * @var array<string, InstalledJson>
      */
-    private array $installedJson;
+    private array $installedJsonCache = [];
+
+    /**
+     * @var array<string, array<string, list<string>>>
+     */
+    private array $installedPackagesCache = [];
 
     /**
      * @var array<string, list<string>>
      */
-    private array $installedPackages;
+    private array $allowedNamespacesCache = [];
 
-    /**
-     * @var list<string>
-     */
-    private array $allowedNamespaces;
+    private ?string $currentModuleRoot = null;
 
     public function isRestrictedClassNameUsage(ClassReflection $classReflection, Scope $scope, ClassNameUsageLocation $location): ?RestrictedUsage
     {
@@ -98,6 +100,9 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
         if ($this->isInGlobalNamespace($classReflection->getName())) {
             return null;
         }
+
+        // Set the module root based on the file being analyzed
+        $this->currentModuleRoot = $this->findModuleRoot($scope->getFile());
 
         if ($this->isInAllowedNamespace($classReflection->getName())) {
             return null;
@@ -115,6 +120,26 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
         );
     }
 
+    private function findModuleRoot(string $file): string
+    {
+        // Start from the file's directory, or the path itself if it's already a directory
+        $dir = is_dir($file) ? $file : dirname($file);
+        
+        while ($dir !== '/') {
+            if (file_exists($dir . '/composer.json')) {
+                return $dir;
+            }
+            $parent = dirname($dir);
+            if ($parent === $dir) {
+                break;
+            }
+            $dir = $parent;
+        }
+        
+        // Fallback to basepath if no composer.json found
+        return basepath() ?? getcwd();
+    }
+
     public function getKey(): string
     {
         return 'restrict-implicit-dependency-usage';
@@ -122,7 +147,21 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
 
     public function getHash(): string
     {
-        return hash(serialize($this->getComposerJson()) . serialize($this->getInstalledJson()), Algorithm::Sha256);
+        // Hash all cached modules
+        $hashes = [];
+        foreach ($this->composerJsonCache as $moduleRoot => $composerJson) {
+            $installedJson = $this->installedJsonCache[$moduleRoot] ?? [];
+            $hashes[] = hash(serialize($composerJson) . serialize($installedJson) . $moduleRoot, Algorithm::Sha256);
+        }
+        
+        // If no modules cached yet, return a default hash
+        if (empty($hashes)) {
+            $moduleRoot = basepath() ?? getcwd();
+            $this->currentModuleRoot = $moduleRoot;
+            return hash(serialize($this->getComposerJson()) . serialize($this->getInstalledJson()) . $moduleRoot, Algorithm::Sha256);
+        }
+        
+        return hash(implode('', $hashes), Algorithm::Sha256);
     }
 
     public function isInGlobalNamespace(string $class): bool
@@ -153,7 +192,8 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
      */
     private function getAllowedNamespaces(): array
     {
-        return $this->allowedNamespaces ??= [
+        $moduleRoot = $this->currentModuleRoot ?? basepath() ?? getcwd();
+        return $this->allowedNamespacesCache[$moduleRoot] ??= [
             ...$this->getOwnedNamespaces(),
             ...$this->getRequiredNamespaces(),
         ];
@@ -201,7 +241,8 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
      */
     private function getInstalledPackagesWithNamespaces(): array
     {
-        return $this->installedPackages ??= [
+        $moduleRoot = $this->currentModuleRoot ?? basepath() ?? getcwd();
+        return $this->installedPackagesCache[$moduleRoot] ??= [
             ...from_entries(array_map(fn(array $package) => [$package['name'], keys($package['autoload']['psr-4'] ?? [])], $this->getInstalledJson()['packages'])),
             ...$this->getReplacedPackagesWithNamespaces(),
         ];
@@ -228,7 +269,17 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
      */
     private function getInstalledJson(): array
     {
-        return $this->installedJson ??= Type\shape([
+        $moduleRoot = $this->currentModuleRoot ?? basepath() ?? getcwd();
+        
+        // If module doesn't have its own vendor directory, use the main project's
+        $vendorRoot = $moduleRoot;
+        if (!file_exists($vendorRoot . '/vendor/composer/installed.json')) {
+            $vendorRoot = basepath() ?? getcwd();
+        }
+        
+        // Cache using module root as key, but read from vendorRoot
+        $cacheKey = $moduleRoot . '|' . $vendorRoot;
+        return $this->installedJsonCache[$cacheKey] ??= Type\shape([
             'packages' => Type\vec(Type\shape([
                 'name' => Type\string(),
                 'autoload' => Type\optional(Type\shape([
@@ -236,7 +287,7 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
                 ], allow_unknown_fields: true)),
                 'replace' => Type\optional(Type\dict(Type\string(), Type\string())),
             ], allow_unknown_fields: true)),
-        ], allow_unknown_fields: true)->assert(decode(read(basepath() . '/vendor/composer/installed.json')));
+        ], allow_unknown_fields: true)->assert(decode(read($vendorRoot . '/vendor/composer/installed.json')));
     }
 
     /**
@@ -244,12 +295,13 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
      */
     private function getComposerJson(): array
     {
-        return $this->composerJson ??= Type\shape([
+        $moduleRoot = $this->currentModuleRoot ?? basepath() ?? getcwd();
+        return $this->composerJsonCache[$moduleRoot] ??= Type\shape([
             'require' => Type\optional(Type\dict(Type\string(), Type\string())),
             'require-dev' => Type\optional(Type\dict(Type\string(), Type\string())),
             'autoload' => Type\optional(Type\shape([
                 'psr-4' => Type\optional(Type\dict(Type\string(), Type\union(Type\string(), Type\vec(Type\string())))),
             ], allow_unknown_fields: true)),
-        ], allow_unknown_fields: true)->assert(decode(read('composer.json')));
+        ], allow_unknown_fields: true)->assert(decode(read($moduleRoot . '/composer.json')));
     }
 }
