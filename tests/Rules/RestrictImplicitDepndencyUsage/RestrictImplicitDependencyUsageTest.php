@@ -23,6 +23,7 @@ final class RestrictImplicitDependencyUsageTest extends PHPStanTestCase
 {
     private ReflectionProvider $reflectionProvider;
     private ScopeFactory $scopeFactory;
+    private RestrictImplicitDependencyUsage $extension;
 
     protected function setUp(): void
     {
