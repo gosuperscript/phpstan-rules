@@ -54,6 +54,7 @@ class StrictComparisonOfObjectsRule implements Rule
                             $rightTypeDescription,
                             $expectedType->describe(VerbosityLevel::typeOnly())
                         ))
+                            ->identifier('superscript.strictComparisonOfObjects')
                             ->build(),
                     ];
                 }
