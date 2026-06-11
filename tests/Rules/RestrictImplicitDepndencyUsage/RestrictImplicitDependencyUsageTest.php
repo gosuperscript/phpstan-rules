@@ -16,7 +16,6 @@ use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psl\Collection\Vector;
 use Superscript\PHPStanRules\Rules\RestrictImplicitDependencyUsage;
 
 final class RestrictImplicitDependencyUsageTest extends PHPStanTestCase
@@ -65,6 +64,9 @@ final class RestrictImplicitDependencyUsageTest extends PHPStanTestCase
 
     public static function restrictedCases(): \Generator
     {
-        yield 'class from undefined package' => [\Psl\Collection\Vector::class];
+        // sebastian/diff is installed transitively (via phpunit) but not
+        // declared in this package's composer.json, so a class from its
+        // namespace must be flagged as an implicit-dependency usage.
+        yield 'class from undefined package' => [\SebastianBergmann\Diff\Differ::class];
     }
 }

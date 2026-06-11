@@ -7,6 +7,10 @@ function basepath(): ?string
 {
     $real_path = realpath(__DIR__);
 
+    if ($real_path === false) {
+        return null;
+    }
+
     preg_match(
         "/.+\b(vendor\/.+)/",
         $real_path,
@@ -30,7 +34,7 @@ function basepath(): ?string
 
     $project_path = realpath(__DIR__ . DIRECTORY_SEPARATOR . $out);
 
-    if ( !file_exists($project_path . DIRECTORY_SEPARATOR . "composer.json") ) {
+    if ( $project_path === false || !file_exists($project_path . DIRECTORY_SEPARATOR . "composer.json") ) {
         return null;
     }
 

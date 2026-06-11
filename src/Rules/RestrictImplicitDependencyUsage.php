@@ -233,10 +233,10 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
                 'name' => Type\string(),
                 'autoload' => Type\optional(Type\shape([
                     'psr-4' => Type\optional(Type\dict(Type\string(), Type\union(Type\string(), Type\vec(Type\string())))),
-                ], allowUnknownFields: true)),
+                ], true)),
                 'replace' => Type\optional(Type\dict(Type\string(), Type\string())),
-            ], allowUnknownFields: true)),
-        ], allowUnknownFields: true)->assert(decode(read(basepath() . '/vendor/composer/installed.json')));
+            ], true)),
+        ], true)->assert(decode(read(basepath() . '/vendor/composer/installed.json')));
     }
 
     /**
@@ -249,7 +249,7 @@ final class RestrictImplicitDependencyUsage implements RestrictedClassNameUsageE
             'require-dev' => Type\optional(Type\dict(Type\string(), Type\string())),
             'autoload' => Type\optional(Type\shape([
                 'psr-4' => Type\optional(Type\dict(Type\string(), Type\union(Type\string(), Type\vec(Type\string())))),
-            ], allowUnknownFields: true)),
-        ], allowUnknownFields: true)->assert(decode(read('composer.json')));
+            ], true)),
+        ], true)->assert(decode(read('composer.json')));
     }
 }
